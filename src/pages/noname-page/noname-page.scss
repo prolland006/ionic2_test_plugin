@@ -2,7 +2,15 @@
 
 }
 
-.bye-ionic {
+.noname-content {
   //background-image: url('../../assets/pic/bois.jpg');
   //background-repeat: no-repeat;
+  .scroll-content {
+    height: 100%
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+  }
 }

@@ -1,6 +1,6 @@
 ﻿# Noname
 ## Summary
-IONIC2 boilerplate with karma jasmine unit tests
+IONIC2 test plugin cordova : BackgroundGeolocation
 
 ## Setup
 - npm i
@@ -9,6 +9,7 @@ IONIC2 boilerplate with karma jasmine unit tests
 ## Android
 - install android studio and install an android emulator
 - cordova plugin add cordova-plugin-crosswalk-webview
+- ionic plugin add cordova-plugin-mauron85-background-geolocation
 - cordova platform add android --save
 - ionic build android --release
 - import platform directory in android studio
@@ -33,6 +34,10 @@ Note that for livereload to work if the device is not connected directly make su
 ## Documentation
 http://ionicframework.com/docs/v2/
 https://developers.google.com/web/tools/chrome-devtools/remote-debugging/
+https://github.com/rodrigoreal/ionic2-google-maps
+http://www.joshmorony.com/ionic-2-how-to-use-google-maps-geolocation-video-tutorial/
+http://www.gajotres.net/ionic-2-integrating-google-maps/
+https://developers.google.com/maps/documentation/javascript/get-api-key
 
 
 

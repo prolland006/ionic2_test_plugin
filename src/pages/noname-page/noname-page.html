@@ -4,13 +4,19 @@
       <ion-icon name="menu"></ion-icon>
     </button>
     <ion-title>{{title}}</ion-title>
+    <ion-buttons end>
+      <button ion-button (click)="addMarker()"><ion-icon name="add"></ion-icon>Add Marker</button>
+    </ion-buttons>
   </ion-navbar>
 </ion-header>
 
-<ion-content padding class="message bye-ionic">
+<ion-content padding class="noname-content">
 
   <ion-item>
-    <h1>Noname</h1>
+    latitude {{ this.latitude }} <br>
+    longitude {{ this.longitude }}
   </ion-item>
+
+  <div #map id="map"></div>
 
 </ion-content>
