@@ -4,12 +4,9 @@ import { Component } from '@angular/core';
 import {Platform, NavController} from "ionic-angular/index";
 import { ViewChild, ElementRef } from '@angular/core';
 import Timer = NodeJS.Timer;
-import { MediaPlugin } from 'ionic-native';
 import { BackgroundGeolocation } from 'ionic-native';
 
 declare let google;
-
-const SRC_WAV_WIN = 'sound/win.wav';
 
 @Component({
   selector: 'noname-page',
@@ -19,60 +16,44 @@ const SRC_WAV_WIN = 'sound/win.wav';
 export class nonamePage {
 
   @ViewChild('map') mapElement: ElementRef;
-  map: any;
+  map: any = null;
 
   public title: string = 'Noname';
-  mediaWinner: MediaPlugin = null;
-  latitude: string;
-  longitude: string;
+  latitude: string = '';
+  longitude: string = '';
+  locations: any;
+  trackerInterval: Timer;
 
   constructor(public navCtrl: NavController, private platform: Platform) {
+
     if (this.platform.is('android')) {
       this.platform.ready().then(() => {
-        this.mediaWinner = new MediaPlugin(this.getMediaURL(SRC_WAV_WIN));
 
-        setInterval(()=>{
+        // BackgroundGeolocation is highly configurable. See platform specific configuration options
+        let config = {
+          interval: 2000,
+          locationTimeout: 2,
+          desiredAccuracy: 10,
+          stationaryRadius: 20,
+          distanceFilter: 30,
+          debug: true, //  enable this hear sounds for background-geolocation life-cycle.
+          stopOnTerminate: false, // enable this to clear background location settings when the app terminates
+        };
 
-          // BackgroundGeolocation is highly configurable. See platform specific configuration options
-          let config = {
-            desiredAccuracy: 10,
-            stationaryRadius: 20,
-            distanceFilter: 30,
-            debug: true, //  enable this hear sounds for background-geolocation life-cycle.
-            stopOnTerminate: false, // enable this to clear background location settings when the app terminates
-          };
+        BackgroundGeolocation.configure((location) => {
+          console.log('[js] BackgroundGeolocation callback:  ' + location.latitude + ',' + location.longitude);
 
-          BackgroundGeolocation.configure((location) => {
-            console.log('[js] BackgroundGeolocation callback:  ' + location.latitude + ',' + location.longitude);
-            this.latitude = location.latitude;
-            this.longitude = location.longitude;
+          this.setCurrentLocation({latitude:location.latitude, longitude:location.longitude});
+          this.startTrackingInterval();
 
-            let latLng = new google.maps.LatLng(location.latitude, location.longitude);
+          // IMPORTANT:  You must execute the finish method here to inform the native plugin that you're finished,
+          // and the background-task may be completed.  You must do this regardless if your HTTP request is successful or not.
+          // IF YOU DON'T, ios will CRASH YOUR APP for spending too much time in the background.
+          //BackgroundGeolocation.finish(); // FOR IOS ONLY
 
-            let mapOptions = {
-              center: latLng,
-              zoom: 15,
-              mapTypeId: google.maps.MapTypeId.ROADMAP
-            }
-
-            this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
-
-
-
-            // IMPORTANT:  You must execute the finish method here to inform the native plugin that you're finished,
-            // and the background-task may be completed.  You must do this regardless if your HTTP request is successful or not.
-            // IF YOU DON'T, ios will CRASH YOUR APP for spending too much time in the background.
-            //BackgroundGeolocation.finish(); // FOR IOS ONLY
-
-
-
-          }, (error) => {
-            console.log('BackgroundGeolocation error');
-          }, config);
-
-
-
-        },2000);
+        }, (error) => {
+          console.log('BackgroundGeolocation error');
+        }, config);
 
 
       }).catch(err=> {
@@ -80,6 +61,68 @@ export class nonamePage {
       });
     }
     
+  }
+
+  initMap(location: {latitude:string, longitude:string}) {
+    let latLng = new google.maps.LatLng(location.latitude, location.longitude);
+
+    let mapOptions = {
+      center: latLng,
+      zoom: 15,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    }
+    if (this.map == null) {
+      this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
+    } else {
+      this.map.setCenter(latLng);
+    }
+    this.addMarker();
+  }
+
+  addLocation(locations: any): void {
+    this.locations = locations;
+  }
+
+  startTrackingInterval(): void {
+    this.trackerInterval = setInterval(() => { this.refreshLocations(); }, 3000);
+  }
+
+  refreshLocations(): void {
+    BackgroundGeolocation.getLocations().then(locations => {
+      this.locations = locations;
+      if (locations.length != 0) {
+        this.setCurrentLocation(locations[locations.length-1]);
+      }
+    }).catch(error => {
+      console.log(error);
+    });
+  }
+
+  startTracker(): void {
+    BackgroundGeolocation.deleteAllLocations();
+    BackgroundGeolocation.start();
+  }
+
+  setCurrentLocation(location: {latitude:string, longitude:string}) {
+    if ((this.latitude == location.latitude) && (this.longitude == location.longitude)) {
+      return;
+    }
+    this.latitude = location.latitude;
+    this.longitude = location.longitude;
+    this.initMap(location);
+  }
+
+  stopTracking(): void {
+    clearInterval(this.trackerInterval);
+    BackgroundGeolocation.getLocations().then(locations => {
+      this.locations = locations;
+      if (locations.length != 0) {
+        this.setCurrentLocation(locations[locations.length-1]);
+      }
+    }).catch(error => {
+      console.log(error);
+    });
+    BackgroundGeolocation.stop();
   }
 
   addMarker(){
@@ -112,15 +155,7 @@ export class nonamePage {
     return;
   }
 
-  playWinnerSound() {
-    this.platform.ready().then(() => {
-      this.mediaWinner.play();
-    }).catch(err=> {
-      console.log(err);
-    });
-  }
-
-  /*
+   /*
    * set the media URL switch the platform
    */
   getMediaURL(mediaPath) {
