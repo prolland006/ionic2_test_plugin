@@ -3,6 +3,7 @@ import { Platform, MenuController, Nav } from 'ionic-angular';
 import { environment } from '../environments/environment';
 import { nonamePage } from "../pages/noname-page/noname-page";
 import { BackgroundGeolocation } from 'ionic-native';
+import { LogPage } from "../pages/log-page/log-page";
 
 @Component({
   templateUrl: 'app.html',
@@ -26,7 +27,8 @@ export class MyApp {
 
     // set our app's pages
     this.pages = [
-      { title: 'noname', component: nonamePage },
+      { title: 'map', component: nonamePage },
+      { title: 'log', component: LogPage },
     ];
   }
 
@@ -37,31 +39,6 @@ export class MyApp {
 
       // https://github.com/lathonez/clicker/issues/148#issuecomment-254436635
       // StatusBar.styleDefault();
-// IMPORTANT: BackgroundGeolocation must be called within app.ts and or before Geolocation. Otherwise the platform will not ask you for background tracking permission.
-
-      // BackgroundGeolocation is highly configurable. See platform specific configuration options
-      let config = {
-        desiredAccuracy: 10,
-        stationaryRadius: 20,
-        distanceFilter: 30,
-        debug: true, //  enable this hear sounds for background-geolocation life-cycle.
-        stopOnTerminate: false, // enable this to clear background location settings when the app terminates
-      };
-
-      BackgroundGeolocation.configure((location) => {
-        console.log('[js] BackgroundGeolocation callback:  ' + location.latitude + ',' + location.longitude);
-
-        // IMPORTANT:  You must execute the finish method here to inform the native plugin that you're finished,
-        // and the background-task may be completed.  You must do this regardless if your HTTP request is successful or not.
-        // IF YOU DON'T, ios will CRASH YOUR APP for spending too much time in the background.
-        BackgroundGeolocation.finish(); // FOR IOS ONLY
-
-      }, (error) => {
-        console.log('BackgroundGeolocation error');
-      }, config);
-
-      // Turn ON the background-geolocation system.  The user will be tracked whenever they suspend the app.
-      BackgroundGeolocation.start();
       console.log('production: ' + environment.production);
     });
   }

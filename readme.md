@@ -17,6 +17,7 @@ IONIC2 test plugin cordova : BackgroundGeolocation
 - ionic emulate android
 - cordova run android --list
 - ionic run android --device
+- cordova plugin add cordova-plugin-network-information
 You can add additional flags when using  ionic run.
 
 -c will show console logs.
@@ -40,6 +41,7 @@ http://www.joshmorony.com/adding-background-geolocation-to-an-ionic-2-applicatio
 http://www.joshmorony.com/creating-an-advanced-google-maps-component-in-ionic-2/
 http://www.gajotres.net/ionic-2-integrating-google-maps/
 https://developers.google.com/maps/documentation/javascript/
+https://www.npmjs.com/package/cordova-plugin-mauron85-background-geolocation
 
 
 

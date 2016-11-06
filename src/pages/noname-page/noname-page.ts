@@ -1,16 +1,18 @@
 'use strict';
 
-import { Component } from '@angular/core';
-import {Platform, NavController} from "ionic-angular/index";
+import {Component, Renderer} from '@angular/core';
+import {Platform, NavController, Events} from "ionic-angular/index";
 import { ViewChild, ElementRef } from '@angular/core';
 import Timer = NodeJS.Timer;
-import { BackgroundGeolocation } from 'ionic-native';
+import {log, PRIORITY_INFO, PRIORITY_ERROR} from "../../services/log";
+import {ConnectivityService} from "../../services/connectivity-service";
+import {BackgroundGeolocationService} from "../../services/background-geolocation-service";
 
 declare let google;
 
 @Component({
   selector: 'noname-page',
-  templateUrl: 'noname-page.html',
+  templateUrl: 'noname-page.html'
 })
 
 export class nonamePage {
@@ -21,49 +23,39 @@ export class nonamePage {
   public title: string = 'Noname';
   latitude: string = '';
   longitude: string = '';
-  locations: any;
-  trackerInterval: Timer;
+  markerNb: number = 0;
 
-  constructor(public navCtrl: NavController, private platform: Platform) {
+  constructor(public navCtrl: NavController, private platform: Platform, public fifoTrace: log,
+              public connectivityService: ConnectivityService, events: Events, renderer: Renderer,
+              public backgroundGeolocationService:BackgroundGeolocationService) {
 
-    if (this.platform.is('android')) {
-      this.platform.ready().then(() => {
-
-        // BackgroundGeolocation is highly configurable. See platform specific configuration options
-        let config = {
-          interval: 2000,
-          locationTimeout: 2,
-          desiredAccuracy: 10,
-          stationaryRadius: 20,
-          distanceFilter: 30,
-          debug: true, //  enable this hear sounds for background-geolocation life-cycle.
-          stopOnTerminate: false, // enable this to clear background location settings when the app terminates
-        };
-
-        BackgroundGeolocation.configure((location) => {
-          console.log('[js] BackgroundGeolocation callback:  ' + location.latitude + ',' + location.longitude);
-
-          this.setCurrentLocation({latitude:location.latitude, longitude:location.longitude});
-          this.startTrackingInterval();
-
-          // IMPORTANT:  You must execute the finish method here to inform the native plugin that you're finished,
-          // and the background-task may be completed.  You must do this regardless if your HTTP request is successful or not.
-          // IF YOU DON'T, ios will CRASH YOUR APP for spending too much time in the background.
-          //BackgroundGeolocation.finish(); // FOR IOS ONLY
-
-        }, (error) => {
-          console.log('BackgroundGeolocation error');
-        }, config);
-
-
-      }).catch(err=> {
-        console.log(err);
+    renderer.listenGlobal('document', 'online', (event) => {
+      this.fifoTrace.log({
+        level: PRIORITY_INFO,
+        message: 'you are online...'
       });
-    }
-    
+    });
+
+    renderer.listenGlobal('document', 'offline', (event) => {
+      this.fifoTrace.log({
+        level: PRIORITY_INFO,
+        message: 'you are offline...'
+      });
+    });
+
+    this.fifoTrace.log({ level: PRIORITY_INFO, message: 'create nonamePage' });
+
+    events.subscribe('BackgroundGeolocationService:setCurrentLocation', (location) => {
+      this.setCurrentLocation(location[0]);
+    });
+
   }
 
   initMap(location: {latitude:string, longitude:string}) {
+    this.fifoTrace.log({
+       level: PRIORITY_ERROR,
+        message: `initMap  ${location.latitude},${location.longitude}`
+    });
     let latLng = new google.maps.LatLng(location.latitude, location.longitude);
 
     let mapOptions = {
@@ -73,71 +65,42 @@ export class nonamePage {
     }
     if (this.map == null) {
       this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
-    } else {
-      this.map.setCenter(latLng);
     }
-    this.addMarker();
-  }
-
-  addLocation(locations: any): void {
-    this.locations = locations;
-  }
-
-  startTrackingInterval(): void {
-    this.trackerInterval = setInterval(() => { this.refreshLocations(); }, 3000);
-  }
-
-  refreshLocations(): void {
-    BackgroundGeolocation.getLocations().then(locations => {
-      this.locations = locations;
-      if (locations.length != 0) {
-        this.setCurrentLocation(locations[locations.length-1]);
-      }
-    }).catch(error => {
-      console.log(error);
-    });
-  }
-
-  startTracker(): void {
-    BackgroundGeolocation.deleteAllLocations();
-    BackgroundGeolocation.start();
+    this.map.setCenter(latLng);
+    this.addMarker(location);
   }
 
   setCurrentLocation(location: {latitude:string, longitude:string}) {
+    this.fifoTrace.log({
+      level: PRIORITY_ERROR,
+      message: `nonamePage.setCurrentLocation  ${location.latitude},${location.longitude}`
+    });
     if ((this.latitude == location.latitude) && (this.longitude == location.longitude)) {
       return;
     }
     this.latitude = location.latitude;
     this.longitude = location.longitude;
-    this.initMap(location);
+    if(this.connectivityService.isOnline()) {
+      this.initMap(location);
+    } else {
+      this.fifoTrace.log({
+        level: PRIORITY_INFO,
+        message: `your mobile is offline`
+      });
+    }
   }
 
-  stopTracking(): void {
-    clearInterval(this.trackerInterval);
-    BackgroundGeolocation.getLocations().then(locations => {
-      this.locations = locations;
-      if (locations.length != 0) {
-        this.setCurrentLocation(locations[locations.length-1]);
-      }
-    }).catch(error => {
-      console.log(error);
-    });
-    BackgroundGeolocation.stop();
-  }
-
-  addMarker(){
+  addMarker(location: {latitude:string, longitude:string}){
     if (this.map == null)return;
 
-    let marker = new google.maps.Marker({
+      let latLng = new google.maps.LatLng(location.latitude, location.longitude);
+      let marker = new google.maps.Marker({
       map: this.map,
       animation: google.maps.Animation.DROP,
-      position: this.map.getCenter()
+      position: latLng
     });
 
-    let content = "<h4>Information!</h4>";
-
-    this.addInfoWindow(marker, content);
-
+    this.addInfoWindow(marker, `<h4>${this.markerNb++}</h4>`);
   }
 
   addInfoWindow(marker, content) {
@@ -149,10 +112,6 @@ export class nonamePage {
     google.maps.event.addListener(marker, 'click', () => {
       infoWindow.open(this.map, marker);
     });
-  }
-
-  public onGainChange(): void {
-    return;
   }
 
    /*

@@ -7,13 +7,11 @@
   </ion-navbar>
 </ion-header>
 
-<ion-content padding class="noname-content">
 
-  <ion-item>
-    latitude {{ this.latitude }} <br>
-    longitude {{ this.longitude }}
-  </ion-item>
+<ion-content padding>
 
-  <div #map id="map"></div>
+    <span *ngFor="let message of fifoTrace.fifoTrace">
+      {{ message.message }}<br>
+    </span>
 
 </ion-content>
