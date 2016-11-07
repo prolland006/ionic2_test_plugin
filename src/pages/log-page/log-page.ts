@@ -10,8 +10,8 @@ export class LogPage {
 
   public title: string = 'Log';
 
-  constructor(public navCtrl: NavController, public fifoTrace: log) {
-    this.fifoTrace.log({ level: PRIORITY_INFO, message: 'create LogPage' });
+  constructor(public navCtrl: NavController, public trace: log) {
+    this.trace.info('create LogPage');
   }
 
 }

@@ -25,25 +25,19 @@ export class nonamePage {
   longitude: string = '';
   markerNb: number = 0;
 
-  constructor(public navCtrl: NavController, private platform: Platform, public fifoTrace: log,
+  constructor(public navCtrl: NavController, private platform: Platform, public trace: log,
               public connectivityService: ConnectivityService, events: Events, renderer: Renderer,
               public backgroundGeolocationService:BackgroundGeolocationService) {
 
+    this.trace.info('create nonamePage');
+
     renderer.listenGlobal('document', 'online', (event) => {
-      this.fifoTrace.log({
-        level: PRIORITY_INFO,
-        message: 'you are online...'
-      });
+      this.trace.info('you are online...');
     });
 
     renderer.listenGlobal('document', 'offline', (event) => {
-      this.fifoTrace.log({
-        level: PRIORITY_INFO,
-        message: 'you are offline...'
-      });
+      this.trace.info('you are offline...');
     });
-
-    this.fifoTrace.log({ level: PRIORITY_INFO, message: 'create nonamePage' });
 
     events.subscribe('BackgroundGeolocationService:setCurrentLocation', (location) => {
       this.setCurrentLocation(location[0]);
@@ -52,10 +46,7 @@ export class nonamePage {
   }
 
   initMap(location: {latitude:string, longitude:string}) {
-    this.fifoTrace.log({
-       level: PRIORITY_ERROR,
-        message: `initMap  ${location.latitude},${location.longitude}`
-    });
+    this.trace.info(`initMap  ${location.latitude},${location.longitude}`);
     let latLng = new google.maps.LatLng(location.latitude, location.longitude);
 
     let mapOptions = {
@@ -71,22 +62,19 @@ export class nonamePage {
   }
 
   setCurrentLocation(location: {latitude:string, longitude:string}) {
-    this.fifoTrace.log({
-      level: PRIORITY_ERROR,
-      message: `nonamePage.setCurrentLocation  ${location.latitude},${location.longitude}`
-    });
+    this.trace.info(`nonamePage.setCurrentLocation  ${location.latitude},${location.longitude}`);
+
     if ((this.latitude == location.latitude) && (this.longitude == location.longitude)) {
       return;
     }
+
     this.latitude = location.latitude;
     this.longitude = location.longitude;
+
     if(this.connectivityService.isOnline()) {
       this.initMap(location);
     } else {
-      this.fifoTrace.log({
-        level: PRIORITY_INFO,
-        message: `your mobile is offline`
-      });
+      this.trace.info(`your mobile is offline`);
     }
   }
 
