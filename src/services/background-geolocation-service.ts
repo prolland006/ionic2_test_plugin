@@ -1,8 +1,9 @@
 import {Injectable } from "@angular/core";
 import {log, PRIORITY_INFO, PRIORITY_ERROR} from "./log";
-import { BackgroundGeolocation } from 'ionic-native';
+import {BackgroundGeolocation, BackgroundMode} from 'ionic-native';
 import Timer = NodeJS.Timer;
 import {Platform, Events} from "ionic-angular";
+import {Observable} from "rxjs";
 
 @Injectable()
 export class BackgroundGeolocationService {
@@ -46,6 +47,47 @@ export class BackgroundGeolocationService {
 
                 // Turn ON the background-geolocation system.  The user will be tracked whenever they suspend the app.
                 BackgroundGeolocation.start();
+
+                BackgroundMode.setDefaults({ text:'Doing heavy tasks.'});
+                // Enable background mode
+                BackgroundMode.enable();
+
+                // Called when background mode has been activated
+                BackgroundMode.onactivate = () => {
+                    return new Observable(observer=>{
+                        setTimeout(function () {
+                            // Modify the currently displayed notification
+                            observer.next('one');
+                            BackgroundMode.configure({
+                                text:'background for more than 1s now.'
+                            });
+                        }, 1000);
+
+                        setTimeout(function () {
+                            // Modify the currently displayed notification
+                            observer.next('two');
+                            BackgroundMode.configure({
+                                text:'background for more than 5s now.'
+                            });
+                        }, 5000);
+
+                        setTimeout(function () {
+                            // Modify the currently displayed notification
+                            observer.complete();
+                            BackgroundMode.configure({
+                                text:' background for more than 10s.'
+                            });
+                        }, 10000);
+
+                    });
+                };
+
+                BackgroundMode.onactivate().subscribe(
+                    value => console.log('value',value),
+                    error => console.log('error',error),
+                    () => console.log('finished')
+                );
+
 
             }).catch(err => {
                 this.trace.error(err);

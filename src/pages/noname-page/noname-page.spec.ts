@@ -16,9 +16,7 @@ describe('Pages: nonamePage', () => {
     element = fixture.debugElement.nativeElement;
   });
 
-  it('should create nonamePage', async(() => {
-    expect(instance).toBeTruthy();
-  }));
+
 
 
 });

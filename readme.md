@@ -1,6 +1,6 @@
 ﻿# Noname
 ## Summary
-IONIC2 test plugin cordova : BackgroundGeolocation
+IONIC2 test plugin cordova : BackgroundGeolocation, BackgroundMode
 
 ## Setup
 - npm i
