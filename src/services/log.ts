@@ -18,11 +18,14 @@ export class log {
   }
 
   log(msg: {classe ?: string, method?: string, level?: number, message: string}) {
-    this.fifoTrace.shift();
-    if (this.fifoTrace[this.fifoTrace.length-1].message == msg.message) {
+    let match = this.fifoTrace[this.fifoTrace.length-1].message.match(/^(.+)\((\d+)\)$/);
+    if ((this.fifoTrace[this.fifoTrace.length-1].message == msg.message)
+          || ((match != null) && (match[1] == msg.message))
+        ) {
       this.fifoTrace[this.fifoTrace.length-1].message = this.incMessage(msg.message);
     } else {
       let logMsg = new logMessage(msg);
+      this.fifoTrace.shift();
       this.fifoTrace.push(logMsg);
     }
     console.log(this.fifoTrace[this.fifoTrace.length-1].message);

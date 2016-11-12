@@ -43,6 +43,11 @@ export class nonamePage {
       this.setCurrentLocation(location[0]);
     });
 
+    events.subscribe('BackgroundGeolocationService:setCurrentForegroundLocation', (location) => {
+      this.setCurrentForegroundLocation(location[0]);
+    });
+
+
   }
 
   initMap(location: {latitude:string, longitude:string}) {
@@ -62,7 +67,9 @@ export class nonamePage {
   }
 
   setCurrentLocation(location: {latitude:string, longitude:string}) {
-    this.trace.info(`nonamePage.setCurrentLocation  ${location.latitude},${location.longitude}`);
+    console.log('noname loc:',location);
+    console.log('noname loc lat:',`${location.latitude},${location.longitude}`);
+    this.trace.info(`${location.latitude},${location.longitude}`);
 
     if ((this.latitude == location.latitude) && (this.longitude == location.longitude)) {
       return;
@@ -76,6 +83,10 @@ export class nonamePage {
     } else {
       this.trace.info(`your mobile is offline`);
     }
+  }
+
+  setCurrentForegroundLocation(location: any) {
+    //location.coords.latitude + "," + location.coords.longitude)
   }
 
   addMarker(location: {latitude:string, longitude:string}){

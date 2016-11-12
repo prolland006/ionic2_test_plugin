@@ -1,6 +1,6 @@
-﻿# Noname
+﻿# Noname : Google Map and Ionic2 example
 ## Summary
-IONIC2 test plugin cordova : BackgroundGeolocation, BackgroundMode
+IONIC2 test plugin cordova : background-geolocation, geolocation, crosswalk-webview, network-information
 
 ## Setup
 - npm i
@@ -15,9 +15,11 @@ IONIC2 test plugin cordova : BackgroundGeolocation, BackgroundMode
 - import platform directory in android studio
 - cordova plugin add cordova-plugin-media
 - ionic emulate android
-- cordova run android --list
+- ionic run android --list
 - ionic run android --device
 - cordova plugin add cordova-plugin-network-information
+- ionic plugin add cordova-plugin-geolocation
+- ionic (command list)
 You can add additional flags when using  ionic run.
 
 -c will show console logs.

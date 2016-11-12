@@ -10,8 +10,8 @@
 
 <ion-content padding>
 
-    <span *ngFor="let message of trace.fifoTrace">
-      {{ message.message }}<br>
+    <span *ngFor="let message of this.fifoTrace">
+      {{ message.timestamp.getHours() }}:{{ message.timestamp.getMinutes() }} {{ message.message }}<br>
     </span>
 
 </ion-content>

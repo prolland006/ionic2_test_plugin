@@ -1,23 +1,41 @@
 import {Injectable } from "@angular/core";
 import {log, PRIORITY_INFO, PRIORITY_ERROR} from "./log";
-import {BackgroundGeolocation, BackgroundMode} from 'ionic-native';
+import {BackgroundGeolocation, BackgroundMode, Geolocation, Geoposition} from 'ionic-native';
 import Timer = NodeJS.Timer;
 import {Platform, Events} from "ionic-angular";
 import {Observable} from "rxjs";
+
 
 @Injectable()
 export class BackgroundGeolocationService {
 
     trackerInterval: Timer;
     locations: any;
+    public watch: any;
 
     constructor(private platform: Platform, public trace: log, private events: Events) {
         this.trace.info('create BackgroundGeolocationService');
 
         if (this.platform.is('android')) {
+
             this.platform.ready().then(() => {
 
                 this.trace.info(`platform android ready` );
+                this.trace.info(`Foreground tracking` );
+
+                // Foreground Tracking
+                let options = {
+                    frequency: 3000,
+                    enableHighAccuracy: true
+                };
+
+                this.watch = Geolocation.watchPosition(options).filter((p: any) => p.code === undefined).subscribe((position: Geoposition) => {
+                    this.trace.info(`ForegroundLocation`);
+                    console.log(position);
+                    this.trace.info(`ForegroundLocation : ${position.coords.latitude},${position.coords.longitude}`);
+                    this.events.publish('BackgroundGeolocationService:setCurrentForegroundLocation', position);
+                });
+
 
                 // BackgroundGeolocation is highly configurable. See platform specific configuration options
                 let config = {
@@ -30,6 +48,7 @@ export class BackgroundGeolocationService {
                     stopOnTerminate: false // enable this to clear background location settings when the app terminates
                 };
 
+                this.trace.info(`Background tracking` );
                 BackgroundGeolocation.configure((location) => {
                     this.trace.info(`configure  ${location.latitude},${location.longitude}`);
 
@@ -90,7 +109,7 @@ export class BackgroundGeolocationService {
 
 
             }).catch(err => {
-                this.trace.error(err);
+                this.trace.log({level:PRIORITY_ERROR, message:`error:${err}`, method:'constructor', classe:'BackgroundGeolocationService' });
             });
 
         }
@@ -107,7 +126,8 @@ export class BackgroundGeolocationService {
                 this.setCurrentLocation(locations[locations.length-1]);
             }
         }).catch(error => {
-            this.trace.error(`BackgroundGeolocationService error ${error}`);
+            console.log('err:',error);
+            this.trace.log({level:PRIORITY_ERROR, message:`error:${error.toString()}`, method:'refreshlocations', classe:'BackgroundGeolocationService' });
         });
     }
 
@@ -117,6 +137,7 @@ export class BackgroundGeolocationService {
     }
 
     setCurrentLocation(location: {latitude:string, longitude:string}) {
+        console.log('location',location);
         this.events.publish('BackgroundGeolocationService:setCurrentLocation', location);
     }
 
