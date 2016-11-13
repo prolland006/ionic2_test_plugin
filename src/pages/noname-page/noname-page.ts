@@ -1,6 +1,6 @@
 'use strict';
 
-import {Component, Renderer} from '@angular/core';
+import {Component, Renderer, NgZone} from '@angular/core';
 import {Platform, NavController, Events} from "ionic-angular/index";
 import { ViewChild, ElementRef } from '@angular/core';
 import Timer = NodeJS.Timer;
@@ -27,7 +27,7 @@ export class nonamePage {
 
   constructor(public navCtrl: NavController, private platform: Platform, public trace: log,
               public connectivityService: ConnectivityService, events: Events, renderer: Renderer,
-              public backgroundGeolocationService:BackgroundGeolocationService) {
+              public backgroundGeolocationService:BackgroundGeolocationService, public zone: NgZone) {
 
     this.trace.info('create nonamePage');
 
@@ -66,27 +66,28 @@ export class nonamePage {
     this.addMarker(location);
   }
 
-  setCurrentLocation(location: {latitude:string, longitude:string}) {
-    console.log('noname loc:',location);
-    console.log('noname loc lat:',`${location.latitude},${location.longitude}`);
-    this.trace.info(`${location.latitude},${location.longitude}`);
+  setCurrentLocation(location: {latitude:string, longitude:string, provider: string}) {
+    this.trace.info(`${location.latitude},${location.longitude},${location.provider}`);
 
     if ((this.latitude == location.latitude) && (this.longitude == location.longitude)) {
       return;
     }
 
-    this.latitude = location.latitude;
-    this.longitude = location.longitude;
+    this.zone.run(() => {
+      this.latitude = location.latitude;
+      this.longitude = location.longitude;
 
-    if(this.connectivityService.isOnline()) {
-      this.initMap(location);
-    } else {
-      this.trace.info(`your mobile is offline`);
-    }
+      if(this.connectivityService.isOnline()) {
+        this.initMap(location);
+      } else {
+        this.trace.info(`your mobile is offline`);
+      }
+    });
+
   }
 
   setCurrentForegroundLocation(location: any) {
-    //location.coords.latitude + "," + location.coords.longitude)
+    this.trace.info(`foreground: ${location.latitude},${location.longitude},${location.provider}`);
   }
 
   addMarker(location: {latitude:string, longitude:string}){

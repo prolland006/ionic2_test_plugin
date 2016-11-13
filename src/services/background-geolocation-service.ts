@@ -31,7 +31,6 @@ export class BackgroundGeolocationService {
 
                 this.watch = Geolocation.watchPosition(options).filter((p: any) => p.code === undefined).subscribe((position: Geoposition) => {
                     this.trace.info(`ForegroundLocation`);
-                    console.log(position);
                     this.trace.info(`ForegroundLocation : ${position.coords.latitude},${position.coords.longitude}`);
                     this.events.publish('BackgroundGeolocationService:setCurrentForegroundLocation', position);
                 });
@@ -102,9 +101,9 @@ export class BackgroundGeolocationService {
                 };
 
                 BackgroundMode.onactivate().subscribe(
-                    value => console.log('value',value),
-                    error => console.log('error',error),
-                    () => console.log('finished')
+                    value => this.trace.info(`onactivate value:${value}`),
+                    error => this.trace.log({level:PRIORITY_ERROR, message:`error:${error}`, method:'onactivate', classe:'BackgroundGeolocationService' }),
+                    () => this.trace.info(`finished`)
                 );
 
 
@@ -137,7 +136,6 @@ export class BackgroundGeolocationService {
     }
 
     setCurrentLocation(location: {latitude:string, longitude:string}) {
-        console.log('location',location);
         this.events.publish('BackgroundGeolocationService:setCurrentLocation', location);
     }
 

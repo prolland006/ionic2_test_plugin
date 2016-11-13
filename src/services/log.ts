@@ -1,5 +1,5 @@
 
-import {Injectable} from "@angular/core";
+import {Injectable, NgZone} from "@angular/core";
 import {logMessage} from "./log-message";
 export const PRIORITY_INFO = 1;
 export const PRIORITY_ERROR = 2;
@@ -11,23 +11,29 @@ export class log {
 
   public fifoTrace: logMessage[];
 
-  constructor() {
+  constructor(public zone: NgZone) {
     this.fifoTrace = new Array(MAXSIZE);
     this.fifoTrace.fill(new logMessage({classe: '', method: '', level: PRIORITY_INFO, message: '' }));
     this.log({level: PRIORITY_INFO, message: 'create log'});
   }
 
   log(msg: {classe ?: string, method?: string, level?: number, message: string}) {
-    let match = this.fifoTrace[this.fifoTrace.length-1].message.match(/^(.+)\((\d+)\)$/);
-    if ((this.fifoTrace[this.fifoTrace.length-1].message == msg.message)
-          || ((match != null) && (match[1] == msg.message))
-        ) {
-      this.fifoTrace[this.fifoTrace.length-1].message = this.incMessage(msg.message);
-    } else {
-      let logMsg = new logMessage(msg);
-      this.fifoTrace.shift();
-      this.fifoTrace.push(logMsg);
-    }
+    this.zone.run(()=>{
+      let match = this.fifoTrace[this.fifoTrace.length-1].message.match(/^(.+)\((\d+)\)$/);
+
+      if ((this.fifoTrace[this.fifoTrace.length-1].message == msg.message)) {
+        this.fifoTrace[this.fifoTrace.length - 1].message = this.incMessage(msg.message);
+
+      } else if ((match != null) && (match[1] == msg.message)) {
+        this.fifoTrace[this.fifoTrace.length - 1].message = this.incMessage(this.fifoTrace[this.fifoTrace.length - 1].message);
+
+      } else {
+        let logMsg = new logMessage(msg);
+        this.fifoTrace.shift();
+        this.fifoTrace.push(logMsg);
+      }
+
+    });
     console.log(this.fifoTrace[this.fifoTrace.length-1].message);
   }
 
