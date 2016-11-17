@@ -17,7 +17,19 @@ export class log {
     this.log({level: PRIORITY_INFO, message: 'create log'});
   }
 
+  gogo() {
+    throw new Error('null log exception error');
+  }
+
   log(msg: {classe ?: string, method?: string, level?: number, message: string}) {
+    if (msg == null) {
+      this.log({classe:'log', method:'log', level:PRIORITY_ERROR, message:'null log exception error'})
+      throw new Error('null log exception error');
+    }
+    if (msg.message == null) {
+      this.log({classe:'log', method:'log', level:PRIORITY_ERROR, message:'null log message exception error'})
+      throw new Error('null log exception error');
+    }
     this.zone.run(()=>{
       let match = this.fifoTrace[this.fifoTrace.length-1].message.match(/^(.+)\((\d+)\)$/);
 

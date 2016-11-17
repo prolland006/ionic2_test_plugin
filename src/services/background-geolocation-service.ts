@@ -4,6 +4,7 @@ import {BackgroundGeolocation, BackgroundMode, Geolocation, Geoposition} from 'i
 import Timer = NodeJS.Timer;
 import {Platform, Events} from "ionic-angular";
 import {Observable} from "rxjs";
+import {error} from "util";
 
 
 @Injectable()
@@ -25,18 +26,23 @@ export class BackgroundGeolocationService {
 
                 // Foreground Tracking
                 let options = {
-                    frequency: 3000,
-                    enableHighAccuracy: true
+                    frequency: 2000,
+                    enableHighAccuracy: true,
+                    maximumAge: Infinity,
+                    timeout: 30000
                 };
 
-                this.watch = Geolocation.watchPosition(options).filter((p: any) => p.code === undefined).subscribe((position: Geoposition) => {
-                    this.trace.info(`ForegroundLocation`);
-                    this.trace.info(`ForegroundLocation : ${position.coords.latitude},${position.coords.longitude}`);
-                    this.events.publish('BackgroundGeolocationService:setCurrentForegroundLocation', position);
-                });
+                this.watch = Geolocation.watchPosition(options)
+//                    .filter((p: any) => p.code === undefined)
+                    .subscribe((position: Geoposition ) => {
+                        console.log('position',position);
+                        this.trace.info(`ForegroundLocation : ${position.coords.latitude},${position.coords.longitude}`);
+                        this.events.publish('BackgroundGeolocationService:setCurrentForegroundLocation', position);
+                    },
+                        (error)=>{this.trace.log({level:PRIORITY_ERROR,message:error,method:'constructor',classe:'BackgroundGeolocationService'})},
+                        ()=>this.trace.info('watchPosition success'));
 
-
-                // BackgroundGeolocation is highly configurable. See platform specific configuration options
+                  // BackgroundGeolocation is highly configurable. See platform specific configuration options
                 let config = {
                     interval: 1000,
                     locationTimeout: 100,
@@ -64,7 +70,7 @@ export class BackgroundGeolocationService {
                 }, config);
 
                 // Turn ON the background-geolocation system.  The user will be tracked whenever they suspend the app.
-                BackgroundGeolocation.start();
+                this.startTracker();
 
                 BackgroundMode.setDefaults({ text:'Doing heavy tasks.'});
                 // Enable background mode
@@ -125,12 +131,33 @@ export class BackgroundGeolocationService {
                 this.setCurrentLocation(locations[locations.length-1]);
             }
         }).catch(error => {
-            console.log('err:',error);
+            console.log('err getLocations:',error);
             this.trace.log({level:PRIORITY_ERROR, message:`error:${error.toString()}`, method:'refreshlocations', classe:'BackgroundGeolocationService' });
         });
+
+        // Foreground Tracking
+        let options = {
+            frequency: 2000,
+            maximumAge: Infinity,
+            enableHighAccuracy: true,
+            timeout: 30000
+        };
+
+        this.trace.info('getCurrentPosition');
+        Geolocation.getCurrentPosition(options)
+            .then((position: Geoposition) => {
+                console.log('position',position);
+                this.trace.info(`ForegroundLocation.getCurrentPosition : ${position.coords.latitude},${position.coords.longitude}`);
+            }).catch((error)=>{
+                if (error.code == 3) {
+                    this.trace.info(`ForegroundLocation : getcurrentPosition timeout`);
+                }
+                this.trace.log({level:PRIORITY_ERROR, message:`error getCurrentPosition:${error.toString()}`, method:'refreshlocations', classe:'BackgroundGeolocationService' });
+            });
     }
 
     startTracker(): void {
+        this.trace.info('startTracker');
         BackgroundGeolocation.deleteAllLocations();
         BackgroundGeolocation.start();
     }

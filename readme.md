@@ -19,7 +19,10 @@ IONIC2 test plugin cordova : background-geolocation, geolocation, crosswalk-webv
 - ionic run android --device
 - cordova plugin add cordova-plugin-network-information
 - ionic plugin add cordova-plugin-geolocation
+- ionic plugin ls
 - ionic (command list)
+- npm update -g cordova
+- cordova platform ls
 You can add additional flags when using  ionic run.
 
 -c will show console logs.
