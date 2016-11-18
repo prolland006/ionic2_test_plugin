@@ -14,7 +14,6 @@ export class log {
   constructor(public zone: NgZone) {
     this.fifoTrace = new Array(MAXSIZE);
     this.fifoTrace.fill(new logMessage({classe: '', method: '', level: PRIORITY_INFO, message: '' }));
-    this.log({level: PRIORITY_INFO, message: 'create log'});
   }
 
   gogo() {
@@ -70,8 +69,8 @@ export class log {
     return `${match[1]}(${nb})`;
   }
 
-  error(message: string) {
-    this.log({ level: PRIORITY_ERROR, message: message});
+  error(classe: Object, method: string, message: string) {
+    this.log({ level: PRIORITY_ERROR, message: message, method: method, classe: classe.constructor.name});
   }
 
 }

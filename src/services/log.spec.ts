@@ -1,4 +1,4 @@
-import {log, PRIORITY_INFO} from "./log";
+import {log, PRIORITY_INFO, PRIORITY_ERROR} from "./log";
 import {inject, fakeAsync} from "@angular/core/testing";
 import {NgZone} from "@angular/core";
 
@@ -22,6 +22,12 @@ describe('Pages: nonamePage', () => {
         expect(fifoTrace.fifoTrace[19].method).toEqual('it');
         expect(()=>{fifoTrace.log(null)}).toThrowError();
         expect(()=>{fifoTrace.log({message:null})}).toThrowError();
+        fifoTrace.error(fifoTrace,'method','error');
+        expect(fifoTrace.fifoTrace.length).toEqual(20);
+        expect(fifoTrace.fifoTrace[19].message).toEqual('error');
+        expect(fifoTrace.fifoTrace[19].level).toEqual(PRIORITY_ERROR);
+        expect(fifoTrace.fifoTrace[19].classe).toEqual('log');
+        expect(fifoTrace.fifoTrace[19].method).toEqual('method');
     })));
 
 });
