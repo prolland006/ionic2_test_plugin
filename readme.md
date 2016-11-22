@@ -1,6 +1,6 @@
 ﻿# Noname : Google Map and Ionic2 example
 ## Summary
-IONIC2 test plugin cordova : background-geolocation, geolocation, crosswalk-webview, network-information
+Find the GPS position where you are and put every 2 seconds a marker on google map. Everything is logged in a log queue and displayed on a page and soon written on a log file.
 
 ## Setup
 - npm i
@@ -10,6 +10,7 @@ IONIC2 test plugin cordova : background-geolocation, geolocation, crosswalk-webv
 - install android studio and install an android emulator
 - cordova plugin add cordova-plugin-crosswalk-webview
 - ionic plugin add cordova-plugin-mauron85-background-geolocation
+- ionic plugin add cordova-plugin-file --save
 - cordova platform add android --save
 - ionic build android --release
 - import platform directory in android studio
@@ -23,6 +24,7 @@ IONIC2 test plugin cordova : background-geolocation, geolocation, crosswalk-webv
 - ionic (command list)
 - npm update -g cordova
 - cordova platform ls
+
 You can add additional flags when using  ionic run.
 
 -c will show console logs.

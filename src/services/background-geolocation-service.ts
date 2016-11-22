@@ -1,10 +1,9 @@
 import {Injectable } from "@angular/core";
-import {log,  PRIORITY_ERROR} from "./log";
-import {BackgroundGeolocation, BackgroundMode, Geolocation, Geoposition} from 'ionic-native';
+import { log } from "./log";
+import { BackgroundGeolocation, BackgroundMode, Geolocation, Geoposition} from 'ionic-native';
 import Timer = NodeJS.Timer;
-import {Platform, Events} from "ionic-angular";
-import {Observable} from "rxjs";
-
+import { Platform, Events} from "ionic-angular";
+import { Observable} from "rxjs";
 
 @Injectable()
 export class BackgroundGeolocationService {
@@ -39,10 +38,11 @@ export class BackgroundGeolocationService {
             this.platform.ready().then(() => {
 
                 this.trace.info(`platform android ready, Foreground tracking` );
+
                 this.startTracking();
 
             }).catch(err => {
-                this.trace.error(this, 'constructor', `error:${err}`);
+                this.trace.error('BackgroundGeolocationService', 'constructor', `error:${err}`);
             });
 
         }
@@ -55,32 +55,33 @@ export class BackgroundGeolocationService {
                         this.trace.info(`Foreground.Watch ${position.coords.latitude},${position.coords.longitude}`);
                         this.events.publish('BackgroundGeolocationService:setCurrentForegroundLocation', position);
                     } else {
-                        this.trace.error(this,'constructor',position.message);
+                        this.trace.error('BackgroundGeolocationService','constructor',position.message);
                     }
                 },
-                (error)=>{this.trace.error(this,'foreGroundWatchPosition',error)},
+                (error)=>{this.trace.error('BackgroundGeolocationService','foreGroundWatchPosition',error)},
                 ()=>this.trace.info('watchPosition success'));
 
     }
 
     backgroundConfigureAndStart() {
         this.trace.info(`Background tracking` );
-        BackgroundGeolocation.configure((location) => {
-            this.trace.info(`configure  ${location.latitude},${location.longitude}`);
+        BackgroundGeolocation.configure(
+            (location) => {
+                this.trace.info(`configure  ${location.latitude},${location.longitude}`);
 
-            this.setCurrentLocation(location);
-            this.trackerInterval = setInterval(() => {
-                this.refreshLocations();
-            }, 2000);
+                this.setCurrentLocation(location);
+                this.trackerInterval = setInterval(() => {
+                    this.refreshLocations();
+                }, 2000);
 
-            // IMPORTANT:  You must execute the finish method here to inform the native plugin that you're finished,
-            // and the background-task may be completed.  You must do this regardless if your HTTP request is successful or not.
-            // IF YOU DON'T, ios will CRASH YOUR APP for spending too much time in the background.
-            //BackgroundGeolocation.finish(); // FOR IOS ONLY
+                // IMPORTANT:  You must execute the finish method here to inform the native plugin that you're finished,
+                // and the background-task may be completed.  You must do this regardless if your HTTP request is successful or not.
+                // IF YOU DON'T, ios will CRASH YOUR APP for spending too much time in the background.
+                //BackgroundGeolocation.finish(); // FOR IOS ONLY
 
-        }, (error) => {
-            this.trace.error(this,'constructor',error);
-        }, this.backGroundConfig);
+            }, (error) => {
+                this.trace.error('BackgroundGeolocationService','constructor',error);
+            }, this.backGroundConfig);
     }
 
 
@@ -88,10 +89,11 @@ export class BackgroundGeolocationService {
         BackgroundGeolocation.getLocations().then(locations => {
             this.locations = locations;
             if (locations.length != 0) {
+                this.trace.info(`location length=${locations.length}`);
                 this.setCurrentLocation(locations[locations.length-1]);
             }
         }).catch(error => {
-            this.trace.error(this,'refreshLocations', `error:${error.toString()}`);
+            this.trace.error('BackgroundGeolocationService','refreshLocations', `error:${error.toString()}`);
         });
 
         // Foreground Tracking
@@ -99,10 +101,11 @@ export class BackgroundGeolocationService {
             .then((position: Geoposition) => {
                 this.trace.info(`Foregrnd.getCurrentPos : ${position.coords.latitude},${position.coords.longitude}`);
             }).catch((error)=>{
-                if (error.code == 3) {
-                    this.trace.info(`Foregrnd.getcurrentPos timeout`);
+                if ((error.code != undefined) && (error.code == 3)) {
+                    this.trace.info(`Foregrnd.getcurrentPos ${error.message}`);
+                } else {
+                    this.trace.error('BackgroundGeolocationService', 'refreshLocations', `error Foregrnd.getCurrentPos:${error.toString()}`);
                 }
-                this.trace.error(this,'refreshLocations',`error Foregrnd.getCurrentPos:${error.toString()}`);
             });
     }
 
@@ -110,11 +113,65 @@ export class BackgroundGeolocationService {
         this.trace.info('startTracker');
         this.foreGroundWatchPosition();
         this.backgroundConfigureAndStart();
-        BackgroundGeolocation.deleteAllLocations();
-        BackgroundGeolocation.start();
+        this.backgroundWatchLocationMode();
+        this.backgroundIsLocationEnabled();
         BackgroundMode.setDefaults({ text:'Doing geoloc tasks.'});
         BackgroundMode.enable();
         this.backGroundOnActivate();
+    }
+
+    backgroundWatchLocationMode() {
+        this.trace.info('backgroundWatchLocationMode');
+        BackgroundGeolocation.watchLocationMode()
+            .then((enabled)=>{
+                if (enabled) {
+                    // location service are now enabled
+                    // call backgroundGeolocation.start
+                    // only if user already has expressed intent to start service
+                    this.trace.info('backgroundGeolocation enabled');
+                } else {
+                    // location service are now disabled or we don't have permission
+                    // time to change UI to reflect that
+                    this.trace.info('backgroundGeolocation disabled');
+                }
+            },
+            (error)=>{
+                this.trace.error('BackgroundGeolocationService','backgroundWatchLocationMode','Error watching location mode. Error:' + error);
+            }
+        );
+    }
+
+    backgroundIsLocationEnabled() {
+        this.trace.info('backgroundIsLocationEnabled');
+        BackgroundGeolocation.isLocationEnabled()
+            .then((enabled)=> {
+                if (enabled) {
+                    this.trace.info('backgroundIsLocationEnabled enabled');
+                    BackgroundGeolocation.start()
+                        .then(()=>{
+                            // service started successfully
+                            // you should adjust your app UI for example change switch element to indicate
+                            // that service is running
+                            this.trace.info('backgroundIsLocationEnabled start');
+                            BackgroundGeolocation.deleteAllLocations();
+                            BackgroundGeolocation.start();
+                        },
+                        (error)=>{
+                            // Tracking has not started because of error
+                            // you should adjust your app UI for example change switch element to indicate
+                            // that service is not running
+                            if (error.code === 2) {
+                                //'Not authorized for location updates
+                            } else {
+                                this.trace.error('BackgroundGeolocationService','backgroundIsLocationEnabled','Start failed: ' + error.message);
+                            }
+                        }
+                        );
+                } else {
+                    // Location services are disabled
+                    this.trace.info('backgroundIsLocationEnabled disabled');
+                }
+            });
     }
 
     backGroundOnActivate() {
@@ -150,7 +207,7 @@ export class BackgroundGeolocationService {
 
         BackgroundMode.onactivate().subscribe(
             value => this.trace.info(`onactivate value:${value}`),
-            error => this.trace.error(this,'backGroundOnActivate',`error:${error}`),
+            error => this.trace.error('BackgroundGeolocationService','backGroundOnActivate',`error:${error}`),
             () => this.trace.info(`finished`)
         );
 
@@ -168,7 +225,7 @@ export class BackgroundGeolocationService {
                 this.setCurrentLocation(locations[locations.length-1]);
             }
         }).catch(error => {
-            this.trace.error(this,'stopTracking',error);
+            this.trace.error('BackgroundGeolocationService','stopTracking',error);
         });
         BackgroundGeolocation.stop();
     }

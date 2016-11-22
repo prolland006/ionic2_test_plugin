@@ -1,7 +1,7 @@
 {
-  "name": "Clicker",
-  "author": "Stephen Hazleton",
-  "homepage": "https://github.com/lathonez/clicker",
+  "name": "Noname",
+  "author": "Patrice Rolland",
+  "homepage": "https://github.com/prolland006",
   "private": true,
   "scripts": {
     "build": "ionic-app-scripts build",

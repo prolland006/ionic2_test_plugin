@@ -20,6 +20,6 @@ export class logMessage {
     }
 
     toString() {
-        return `${this.timestamp.toJSON()} ${this.classe == undefined?'':this.classe} ${this.method == undefined?'':this.method} ${this.level} ${this.message}`;
+        return `${this.timestamp.getHours()}:${this.timestamp.getMinutes()}:${this.timestamp.getSeconds()} ${this.classe == undefined?'':this.classe} ${this.method == undefined?'':this.method} ${this.level} ${this.message}`;
     }
 }

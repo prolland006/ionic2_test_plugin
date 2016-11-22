@@ -1,23 +1,24 @@
 
 import {Injectable, NgZone} from "@angular/core";
 import {logMessage} from "./log-message";
+import { File } from 'ionic-native';
+import {Platform} from "ionic-angular";
+
 export const PRIORITY_INFO = 1;
 export const PRIORITY_ERROR = 2;
 
 const MAXSIZE = 20;
+
+declare var cordova: any;
 
 @Injectable()
 export class log {
 
   public fifoTrace: logMessage[];
 
-  constructor(public zone: NgZone) {
+  constructor(private platform: Platform, public zone: NgZone) {
     this.fifoTrace = new Array(MAXSIZE);
     this.fifoTrace.fill(new logMessage({classe: '', method: '', level: PRIORITY_INFO, message: '' }));
-  }
-
-  gogo() {
-    throw new Error('null log exception error');
   }
 
   log(msg: {classe ?: string, method?: string, level?: number, message: string}) {
@@ -42,10 +43,14 @@ export class log {
         let logMsg = new logMessage(msg);
         this.fifoTrace.shift();
         this.fifoTrace.push(logMsg);
+        if (this.platform.is('android')) {
+          this.platform.ready().then(() => {
+            this.write(logMsg);
+          });
+        }
       }
-
     });
-    console.log(this.fifoTrace[this.fifoTrace.length-1].message);
+    console.log(msg.message);
   }
 
   info(message: string) {
@@ -69,8 +74,52 @@ export class log {
     return `${match[1]}(${nb})`;
   }
 
-  error(classe: Object, method: string, message: string) {
-    this.log({ level: PRIORITY_ERROR, message: message, method: method, classe: classe.constructor.name});
+  write(message: logMessage) {
+    const fs = cordova.file.externalApplicationStorageDirectory;
+
+    File.checkDir(fs, 'log')
+      .then(_ => {
+        let today = new Date();
+        let filename = `log_${today.getFullYear()}.${today.getMonth()}.${today.getDay()}.log`;
+        File.checkFile(fs+'/log', filename)
+            .then((success)=> {
+
+              File.writeExistingFile(fs+'/log', filename, message.toString()+'\r\n')
+                  .then((success)=> {
+                    // success
+                  }, (error) => {
+                    // error
+                    this.error('log', 'write', `error writeExistingFile:${error.message}`)
+                  });
+            }
+            , (error)=> {
+              File.writeFile(fs+'/log', filename, message.toString()+'\r\n', {'append':true})
+                .then((success)=> {
+                  // success
+                },(error)=> {
+                  // error
+                  this.error('log', 'write', `error writeFile:${error.message}`)
+                });
+
+          });
+      })
+      .catch(err => {
+        File.createDir(fs, "log", false)
+            .then((success) => {
+              // success
+              this.info('create log directory success');
+              this.write(message);
+            }, (error) => {
+              // error
+              this.error('log','write',`unable to create log directory ${error.message}`);
+            });
+      });
+
+}
+
+
+error(classe: string, method: string, message: string) {
+    this.log({ level: PRIORITY_ERROR, message: message, method: method, classe: classe});
   }
 
 }
