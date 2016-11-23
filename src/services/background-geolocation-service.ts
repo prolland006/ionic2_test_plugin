@@ -29,7 +29,7 @@ export class BackgroundGeolocationService {
         frequency: 2000,
         enableHighAccuracy: true,
         maximumAge: Infinity,
-        timeout: 30000
+        timeout: 2000
     };
 
     constructor(private platform: Platform, public trace: log, private events: Events) {
@@ -99,11 +99,9 @@ export class BackgroundGeolocationService {
         // Foreground Tracking
         Geolocation.getCurrentPosition(this.foreGroundOptions)
             .then((position: Geoposition) => {
-                this.trace.info(`Foregrnd.getCurrentPos : ${position.coords.latitude},${position.coords.longitude}`);
+                this.trace.info(`Foregrnd ${position.coords.latitude},${position.coords.longitude}`);
             }).catch((error)=>{
-                if ((error.code != undefined) && (error.code == 3)) {
-                    this.trace.info(`Foregrnd.getcurrentPos ${error.message}`);
-                } else {
+                if ((error.code == undefined) || (error.code != 3)) { //timeout
                     this.trace.error('BackgroundGeolocationService', 'refreshLocations', `error Foregrnd.getCurrentPos:${error.toString()}`);
                 }
             });
