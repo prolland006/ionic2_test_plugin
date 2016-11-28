@@ -32,11 +32,11 @@ export class nonamePage {
     this.trace.info('create nonamePage');
 
     renderer.listenGlobal('document', 'online', (event) => {
-      this.trace.info('you are online...');
+      this.trace.info('you are online');
     });
 
     renderer.listenGlobal('document', 'offline', (event) => {
-      this.trace.info('you are offline...');
+      this.trace.info('you are offline');
     });
 
     events.subscribe('BackgroundGeolocationService:setCurrentLocation', (location) => {
@@ -50,7 +50,7 @@ export class nonamePage {
 
   }
 
-  initMap(location: {latitude:string, longitude:string}) {
+  initMap(location: {latitude:string, longitude:string}, color: string) {
     this.trace.info(`initMap  ${location.latitude},${location.longitude}`);
     let latLng = new google.maps.LatLng(location.latitude, location.longitude);
 
@@ -61,9 +61,18 @@ export class nonamePage {
     }
     if (this.map == null) {
       this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
+
+      if (this.backgroundGeolocationService.locations!=undefined) {
+        for (let i = 0; i < this.backgroundGeolocationService.locations.length; i++) {
+          this.addMarker(this.backgroundGeolocationService.locations[i], '#FF0000');
+        }
+      } else {
+        this.addMarker(location, color);
+      }
+    } else {
+      this.addMarker(location, color);
     }
     this.map.setCenter(latLng);
-    this.addMarker(location);
   }
 
   setCurrentLocation(location: {latitude:string, longitude:string, provider: string}) {
@@ -78,7 +87,7 @@ export class nonamePage {
       this.longitude = location.longitude;
 
       if(this.connectivityService.isOnline()) {
-        this.initMap(location);
+        this.initMap(location, '#00FF00');
       } else {
         this.trace.info(`your mobile is offline`);
       }
@@ -86,11 +95,12 @@ export class nonamePage {
 
   }
 
-  setCurrentForegroundLocation(location: any) {
-    this.trace.info(`foreground: ${location.latitude},${location.longitude},${location.provider}`);
+  setCurrentForegroundLocation(position: any) {
+    this.trace.info(`foregrnd evnt ${position.coords.latitude},${position.coords.longitude},${position.coords.provider}`);
+    this.initMap({latitude:position.coords.latitude, longitude:position.coords.longitude}, '#0000FF');
   }
 
-  addMarker(location: {latitude:string, longitude:string}){
+  addMarker(location: {latitude:string, longitude:string}, color: string){
     if (this.map == null)return;
 
     let latLng = new google.maps.LatLng(location.latitude, location.longitude);
@@ -102,10 +112,10 @@ export class nonamePage {
     });*/
 
     let marker = new google.maps.Circle({
-      strokeColor: '#FF0000',
+      strokeColor: color,
       strokeOpacity: 0.8,
       strokeWeight: 2,
-      fillColor: '#FF0000',
+      fillColor: color,
       fillOpacity: 0.35,
       map: this.map,
       center: latLng,

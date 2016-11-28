@@ -15,12 +15,13 @@ export class BackgroundGeolocationService {
     // BackgroundGeolocation is highly configurable. See platform specific configuration options
     backGroundConfig = {
         interval: 1000,
-        locationTimeout: 100,
+        locationTimeout: 500,
         desiredAccuracy: 10,
         stationaryRadius: 20,
         distanceFilter: 30,
         debug: true, //  enable this hear sounds for background-geolocation life-cycle.
-        stopOnTerminate: false // enable this to clear background location settings when the app terminates
+        stopOnTerminate: false, // enable this to clear background location settings when the app terminates
+        maxLocations: 100, //default = 10000
     };
 
 
@@ -36,9 +37,6 @@ export class BackgroundGeolocationService {
 
         if (this.platform.is('android')) {
             this.platform.ready().then(() => {
-
-                this.trace.info(`platform android ready, Foreground tracking` );
-
                 this.startTracking();
 
             }).catch(err => {
@@ -52,7 +50,6 @@ export class BackgroundGeolocationService {
         this.watch = Geolocation.watchPosition(this.foreGroundOptions)
             .subscribe((position: any) => {
                     if (position.code === undefined) {
-                        this.trace.info(`Foreground.Watch ${position.coords.latitude},${position.coords.longitude}`);
                         this.events.publish('BackgroundGeolocationService:setCurrentForegroundLocation', position);
                     } else {
                         this.trace.error('BackgroundGeolocationService','constructor',position.message);
@@ -89,7 +86,7 @@ export class BackgroundGeolocationService {
         BackgroundGeolocation.getLocations().then(locations => {
             this.locations = locations;
             if (locations.length != 0) {
-                this.trace.info(`location length=${locations.length}`);
+                this.trace.info(`lngth ${locations.length}`);
                 this.setCurrentLocation(locations[locations.length-1]);
             }
         }).catch(error => {
@@ -99,9 +96,9 @@ export class BackgroundGeolocationService {
         // Foreground Tracking
         Geolocation.getCurrentPosition(this.foreGroundOptions)
             .then((position: Geoposition) => {
-                this.trace.info(`Foregrnd ${position.coords.latitude},${position.coords.longitude}`);
+                this.trace.info(`Foregrnd current ${position.coords.latitude},${position.coords.longitude}`);
             }).catch((error)=>{
-                if ((error.code == undefined) || (error.code != 3)) { //timeout
+                if ((error.code == undefined) || (error.code != 3)) { //3=timeout
                     this.trace.error('BackgroundGeolocationService', 'refreshLocations', `error Foregrnd.getCurrentPos:${error.toString()}`);
                 }
             });

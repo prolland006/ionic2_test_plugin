@@ -11,7 +11,7 @@ Find the GPS position where you are and put every 2 seconds a marker on google m
 - cordova plugin add cordova-plugin-crosswalk-webview
 - ionic plugin add cordova-plugin-mauron85-background-geolocation
 - ionic plugin add cordova-plugin-file --save
-- cordova platform add android --save
+- ionic platform add android --save
 - ionic build android --release
 - import platform directory in android studio
 - cordova plugin add cordova-plugin-media
